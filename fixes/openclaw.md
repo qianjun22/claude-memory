@@ -28,6 +28,21 @@ npx openclaw gateway restart
 - **Context overflow**: Session history exceeds model's context window (auto-compaction may fail to keep up)
 - **Session corruption**: Conversation history gets out of sync - a tool_result exists without matching tool_use block
 
+## Preventive Settings
+
+Add to `~/.openclaw/openclaw.json` under `agents.defaults`:
+
+```json
+"compaction": {
+  "mode": "safeguard",
+  "reserveTokensFloor": 30000,
+  "maxHistoryShare": 0.4
+}
+```
+
+- `reserveTokensFloor`: Triggers compaction earlier (default 20000)
+- `maxHistoryShare`: Limits history to 40% of context (default 0.5)
+
 ## Useful Commands
 
 | Command | Description |
