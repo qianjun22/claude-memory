@@ -1,8 +1,10 @@
 # OpenClaw Fixes
 
-## Stuck Bot (Session Corruption)
+## Stuck Bot (Session Issues)
 
-**Symptoms:** Bot stops responding, logs show "unexpected tool_use_id" API errors
+**Symptoms:** Bot stops responding. Common causes:
+- **Context overflow**: "prompt too large for the model" - session history grew too big
+- **Session corruption**: "unexpected tool_use_id" API errors
 
 **Fix:**
 ```bash
@@ -22,7 +24,9 @@ echo '{}' > ~/.openclaw/agents/main/sessions/sessions.json
 npx openclaw gateway restart
 ```
 
-**Cause:** Conversation history gets out of sync - a tool_result exists without matching tool_use block.
+**Causes:**
+- **Context overflow**: Session history exceeds model's context window (auto-compaction may fail to keep up)
+- **Session corruption**: Conversation history gets out of sync - a tool_result exists without matching tool_use block
 
 ## Useful Commands
 
