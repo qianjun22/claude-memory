@@ -21,14 +21,39 @@
 #### Context Overflow Error
 ```
 LLM request rejected: input length and max_tokens exceed context limit
+Context overflow: prompt too large for the model
 ```
 
-**Cause:** Session file too large + high max_tokens setting
+**Cause:** Session file too large. Auto-compaction may not trigger if the error pattern isn't recognized.
 
-**Fix:**
-1. Clear the session: `rm ~/.openclaw/agents/main/sessions/*.jsonl`
-2. Add context management to config (see below)
-3. Restart gateway
+**Diagnosis:**
+```bash
+# Find large session files (>500KB is suspicious)
+ls -lhS ~/.openclaw/agents/main/sessions/*.jsonl
+
+# Check session token counts
+cat ~/.openclaw/agents/main/sessions/sessions.json | jq '.[] | {sessionId, totalTokens}'
+```
+
+**Fix (clear specific session, preserve others):**
+```bash
+# 1. Identify the overflowed session ID from sessions.json
+cat ~/.openclaw/agents/main/sessions/sessions.json | jq 'keys'
+
+# 2. Backup the overflowed session file
+mv ~/.openclaw/agents/main/sessions/<session-id>.jsonl ~/.openclaw/agents/main/sessions/<session-id>.jsonl.bak
+
+# 3. Remove from sessions.json (usually "agent:main:main" for the main chat)
+cat ~/.openclaw/agents/main/sessions/sessions.json | jq 'del(.["agent:main:main"])' > /tmp/sessions-fixed.json && mv /tmp/sessions-fixed.json ~/.openclaw/agents/main/sessions/sessions.json
+```
+
+**Code Fix (PR #7279):** The `isContextOverflowError()` function in `src/agents/pi-embedded-helpers/errors.ts` must recognize the error pattern. Add `lower.includes("exceed context limit")` if missing. Then rebuild:
+```bash
+pnpm build
+systemctl --user restart openclaw-gateway.service
+```
+
+**Prevention:** Keep OpenClaw code updated (`git pull && pnpm build`) so auto-compaction triggers properly.
 
 #### Node Version Error
 ```
